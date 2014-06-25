@@ -59,10 +59,10 @@
 /*global Modernizr*/
 (function ($, Modernizr) {
   $.fn.animatetimeline = function (elements, timeline, callback) {
-    elements.el = this;
     for (var key in elements) {
       elements[key] = this.find(elements[key]);
     }
+    elements.el = this;
     animateTimeline(elements, timeline, callback);
   };
   $.animatetimeline = function (elements, timeline, callback) {
