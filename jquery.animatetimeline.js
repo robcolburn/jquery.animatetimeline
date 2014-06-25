@@ -59,6 +59,13 @@
 /*global Modernizr*/
 (function ($, Modernizr) {
   $.fn.animatetimeline = function (elements, timeline, callback) {
+    if (arguments.length === 1 ||
+      (arguments.length === 2 && typeof timeline === 'function')
+    ) {
+      callback = arguments[1];
+      timeline = arguments[0];
+      elements = {};
+    }
     for (var key in elements) {
       elements[key] = this.find(elements[key]);
     }
