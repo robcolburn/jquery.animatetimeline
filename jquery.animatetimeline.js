@@ -452,8 +452,10 @@
    */
   function animate ($el, props, duration, easing) {
     easing = easing || 'easeOutQuad';
-    if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
-      props = getPropsForCSS3(props);
+    if (Modernizr.csstransitions) {
+      if (Modernizr.csstransforms) {
+        props = mapTransformProps(props);
+      }
       if (duration) {
         addTransitions($el.get(0), props, duration, easing);
         $el.css(props);
@@ -462,7 +464,6 @@
         $el.css(props);
       }
     } else {
-      props = getPropsForAnimate(props);
       if (duration) {
         $el.animate(props, {duration: duration, easing: easing, queue: 'animatetimeline'});
       } else {
@@ -482,7 +483,7 @@
    *   Element to cease animations on.
    */
   function stopAnimate ($el) {
-    if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
+    if (Modernizr.csstransitions) {
       clearTransitions($el.get(0), props);
     } else {
       $el.stop('animatetimeline', true, true);
@@ -490,40 +491,30 @@
   }
 
   /**
-   * Applies any specific prop translates for CSS3
+   * Replaces position props for corresponding Transform props.
    *
    * @param {object} props
    *   CSS Properties to be translated.
    * @return {object}
    *   Translated CSS Properties.
    */
-  function getPropsForCSS3 (props) {
+  function mapTransformProps (props) {
     var mapped = {};
     for (var name in props) {
       if (name !== 'left' && name !== 'top') {
         mapped[name] = props[name];
       }
     }
-    if (props.left || props.top) {
-      props.left = props.left || '0px';
-      props.top = props.top || '0px';
+    if (props.left && props.top) {
+      props.left = props.left;
+      props.top = props.top;
       mapped[JS_TRANSFORM] = 'translate(' + props.left + ',' + props.top + ')';
     }
-    return mapped;
-  }
-
-  /**
-   * Applies any specific prop translates for jQuery.animate.
-   *
-   * @param {object} props
-   *   CSS Properties to be translated.
-   * @return {object}
-   *   Translated CSS Properties.
-   */
-  function getPropsForAnimate (props) {
-    var mapped = {};
-    for (var name in props) {
-      mapped[name] = props[name];
+    else if (props.left) {
+      mapped[JS_TRANSFORM] = 'translateX(' + props.left + ')';
+    }
+    else if (props.top) {
+      mapped[JS_TRANSFORM] = 'translateY(' + props.left + ')';
     }
     return mapped;
   }
