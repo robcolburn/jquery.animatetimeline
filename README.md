@@ -7,8 +7,8 @@ Example w/ Parent Element
 -------
 ```js
 var elements = {
-  'bg': '.background',
-  'tx': '.text'
+  'bg': '.bg',
+  'tx': '.tx'
 };
 var timeline = [
   // Prep
@@ -29,10 +29,10 @@ Example w/o Parent element
 -------
 ```js
 var elements = {
- 'newBg': $('#slide1 .background'),
- 'oldBg': $('#slide2 .background'),
- 'newText': $('#slide1 .text'),
- 'oldText': $('#slide2 .text')
+ 'oldBack': $('#slide1 .background'),
+ 'newBack': $('#slide2 .background'),
+ 'oldText': $('#slide1 .text'),
+ 'newText': $('#slide2 .text')
 };
 // This transition requires two elements name "new" and "old"
 var timeline = [

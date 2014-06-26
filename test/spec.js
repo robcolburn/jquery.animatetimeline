@@ -1,10 +1,10 @@
 /*jshint expr:true*/
 $(function($){
-$('body').append('<div id="temp" />');
 describe("jquery.animatetimeline", function(){
   chai.should();
-  afterEach(function () {
-    $('#temp').empty();
+  beforeEach(function () {
+    $('#temp').remove();
+    $('body').append('<div id="temp" />');
   });
 
   it('Animates a simple slide with text', function (done) {
@@ -70,9 +70,9 @@ describe("jquery.animatetimeline", function(){
   });
 
   it('Animates a simple slide with text', function (done) {
-    this.timeout(2100);
+    this.timeout(3*1000);
     $('#temp').html(
-      '<div id="slide1">'+
+      '<div id="slide1" style="">'+
       '<div class="background"/>'+
       '<div class="text"/>'+
       '</div>'+
@@ -82,10 +82,10 @@ describe("jquery.animatetimeline", function(){
       '</div>'
     );
     var elements = {
-     'newBg': $('#slide1 .background'),
-     'oldBg': $('#slide2 .background'),
-     'newText': $('#slide1 .text'),
-     'oldText': $('#slide2 .text')
+     'oldBack': $('#slide1 .background'),
+     'newBack': $('#slide2 .background'),
+     'oldText': $('#slide1 .text'),
+     'newText': $('#slide2 .text')
     };
     // This transition requires two elements name "new" and "old"
     var timeline = [
@@ -107,10 +107,18 @@ describe("jquery.animatetimeline", function(){
       // Clean-up old BG
       {start: 2060, el: 'oldBack', props: {zIndex: 5, display: 'none'}}
     ];
-    $.animatetimeline(elements, timeline, function () {
-     // all done
+    var animTimeline = $.animatetimeline(elements, timeline, function () {
+     $('#slide1 .background').css('display').should.equal('none');
+     $('#slide1 .background').css('opacity').should.equal('0');
+     $('#slide1 .text').css('display').should.equal('none');
+     $('#slide1 .text').css('opacity').should.equal('0');
+     $('#slide2 .background').css('display').should.equal('block');
+     $('#slide2 .background').css('opacity').should.equal('1');
+     $('#slide2 .text').css('display').should.equal('block');
+     $('#slide2 .text').css('opacity').should.equal('1');
      done();
     });
+    animTimeline.getDuration().should.equal(2060);
   });
 
 });
