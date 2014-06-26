@@ -111,6 +111,29 @@
     return this;
   };
 
+  /**
+   * Apply CSS transition property(ies) to an element.
+   *
+   * @param {object|string} props
+   *   Key/value of CSS properties to duration and easing properties.
+   *   Or, CSS property to transition.
+   * @param {[string, string]} duration_easing
+   *   Unused if props is an object
+   *   If null/undefined, unsets the transition
+   *   Number of milliseconds transtion should last.
+   *   Key to easing function in css_easing, defaults to ease-in-out.
+   * @return {object}
+   *   Kay/value map of current transitions.
+   */
+  $.fn.animatetimeline_transition = function (props, duration, easing) {
+    if (this.length > 1) {
+      return this.each(function () {
+        transtion(this, props, duration, easing);
+      });
+    }
+    return transtion(this, props, duration, easing);
+  };
+
   // Export Classes globally for possible extension.
   $.animatetimeline = AnimationTimeline;
   AnimationTimeline.Frame = AnimationFrame;
@@ -118,11 +141,7 @@
   // Export Utility Functions globaly for possible extension.
   AnimationTimeline.animate = animate;
   AnimationTimeline.stopAnimate = stopAnimate;
-  AnimationTimeline.addTransitions = addTransitions;
-  AnimationTimeline.addTransition = addTransition;
-  AnimationTimeline.removeTransitions = removeTransitions;
-  AnimationTimeline.removeTransition = removeTransition;
-  AnimationTimeline.clearTransitions = clearTransitions;
+  AnimationTimeline.transition = transition;
   // Export Constants for lookups
   AnimationTimeline.css_easing = css_easing;
 
@@ -324,115 +343,6 @@
     stopAnimate(this.$el, this.props);
   };
 
-
-  /**
-   * Apply a set of CSS transition properties.
-   *
-   * @param {DOMElement}
-   *   Raw DOM ELement to apply transtion to.
-   * @param {object} props
-   *   Key/value map of CSS properties to transtion.
-   * @param {int} duration
-   *   Number of milliseconds transtion should last.
-   * @param {string} easing
-   *   CSS3 Easing formula to apply, or key in css_easing.
-   * @return {object}
-   *   Kay/value map of current transitions.
-   */
-  function addTransitions (element, props, duration, easing) {
-    var transitions = $.data(element, 'transitions.animatetimeline') || {};
-    for (var prop in props) {
-      if (prop === JS_TRANSFORM) {
-        prop = CSS_TRANSFORM;
-      }
-      transitions[prop] = prop + ' ' + duration + 'ms cubic-bezier(' + (css_easing[easing] || css_easing.ease) + ')';
-    }
-    element.style[JS_TRANSITION] = values(transitions).join(',');
-    $.data(element, 'transitions.animatetimeline', transitions);
-    return transitions;
-  }
-
-  /**
-   * Apply a single CSS transition property.
-   *
-   * @param {DOMElement}
-   *   Raw DOM ELement to apply transtion to.
-   * @param {string} prop
-   *   CSS property to transition.
-   * @param {int} duration
-   *   Number of milliseconds transtion should last.
-   * @param {string} easing
-   *   CSS3 Easing formula to apply, or key in css_easing.
-   * @return {object}
-   *   Kay/value map of current transitions.
-   */
-  function addTransition (element, prop, duration, easing) {
-    var transitions = $.data(element, 'transitions.animatetimeline') || {};
-    if (prop === JS_TRANSFORM) {
-      prop = CSS_TRANSFORM;
-    }
-    transitions[prop] = prop + ' ' + duration + 'ms cubic-bezier(' + (css_easing[easing] || css_easing.ease) + ')';
-    element.style[JS_TRANSITION] = values(transitions).join(',');
-    $.data(element, 'transitions.animatetimeline', transitions);
-    return transitions;
-  }
-
-  /**
-   * Remove a set of CSS transition properties.
-   *
-   * @param {DOMElement}
-   *   Raw DOM ELement to apply transtion to.
-   * @param {object} props
-   *   Key/value map of CSS properties to un-transtion.
-   * @return {object}
-   *   Kay/value map of current transitions.
-   */
-  function removeTransitions (element, props) {
-    var transitions = $.data(element, 'transitions.animatetimeline') || {};
-    for (var prop in props) {
-      if (prop === JS_TRANSFORM) {
-        prop = CSS_TRANSFORM;
-      }
-      transitions[prop] = null;
-    }
-    element.style[JS_TRANSITION] = values(transitions).join(',');
-    $.data(element, 'transitions.animatetimeline', transitions);
-    return transitions;
-  }
-
-  /**
-   * Remove a single CSS transition properties.
-   *
-   * @param {DOMElement}
-   *   Raw DOM ELement to apply transtion to.
-   * @param {string} prop
-   *   CSS property to un-transition.
-   * @return {object}
-   *   Kay/value map of current transitions.
-   */
-  function removeTransition (element, prop) {
-    var transitions = $.data(element, 'transitions.animatetimeline') || {};
-    transitions[prop] = null;
-    element.style[JS_TRANSITION] = values(transitions).join(',');
-    $.data(element, 'transitions.animatetimeline', transitions);
-    return transitions;
-  }
-
-  /**
-   * Remove all CSS transition properties.
-   *
-   * @param {DOMElement}
-   *   Raw DOM ELement to apply transtion to.
-   * @return {object}
-   *   Kay/value map of current transitions.
-   */
-  function clearTransitions (element, prop) {
-    var transitions = $.data(element, 'transitions.animatetimeline', {});
-    element.style[JS_TRANSITION] = '';
-    return transitions;
-  }
-
-
   // Vender prefix constants
   var JS_TRANSFORM = Modernizr.prefixed('transform');
   var JS_TRANSITION = Modernizr.prefixed('transition');
@@ -445,27 +355,21 @@
    *   Element to be animated
    * @param {object<css property: css value>} props
    *   CSS properties to apply.
-   * @param {integer} duration (optional)
+   * @param {integer} duration
    *   Milliseconds of duration of animation.
    * @param {string} easing (optional)
    *   Easing function to use. Default: 'easeOutQuad'.
    */
   function animate ($el, props, duration, easing) {
-    easing = easing || 'easeOutQuad';
     if (Modernizr.csstransitions) {
       if (Modernizr.csstransforms) {
         props = mapTransformProps(props);
       }
-      if (duration) {
-        addTransitions($el.get(0), props, duration, easing);
-        $el.css(props);
-      } else {
-        removeTransitions($el.get(0), props);
-        $el.css(props);
-      }
+      transition($el.get(0), keys(props), duration, easing);
+      $el.css(props);
     } else {
       if (duration) {
-        $el.animate(props, {duration: duration, easing: easing, queue: 'animatetimeline'});
+        $el.animate(props, {duration: duration, easing: easing || 'easeOutQuad', queue: 'animatetimeline'});
       } else {
         $el.css(props);
       }
@@ -488,6 +392,43 @@
     } else {
       $el.stop('animatetimeline', true, true);
     }
+  }
+
+  /**
+   * Apply CSS transition property(ies) to an element.
+   *
+   * @param {DOMElement} element
+   *   Raw DOM ELement to apply transtion to.
+   * @param {object|string} props
+   *   Key/value of CSS properties to duration and easing properties.
+   *   Or, CSS property to transition.
+   * @param {[string, string]} duration_easing
+   *   Unused if props is an object
+   *   If null/undefined, unsets the transition
+   *   Number of milliseconds transtion should last.
+   *   Key to easing function in css_easing, defaults to ease-in-out.
+   * @return {object}
+   *   Kay/value map of current transitions.
+   */
+  function transition (element, props, duration, easing) {
+    var transitions = $.data(element, 'transitions.animatetimeline') || {};
+    if (arguments.length === 2 && typeof props === 'string') {
+      return transtion[prop];
+    } else if (!props) {
+      transitions = {};
+    } else {
+      props = (typeof props === 'string') ? [props] : props;
+      $.map(props, function (prop) {
+        transitions[prop] = !duration ? null : (
+          (prop === JS_TRANSFORM ? CSS_TRANSFORM : prop) + ' ' +
+          duration + 'ms ' +
+          (css_easing[easing] ? 'cubic-bezier(' + css_easing[easing] + ')' : 'ease-in-out')
+        );
+      });
+    }
+    element.style[JS_TRANSITION] = values(transitions).join(',');
+    $.data(element, 'transitions.animatetimeline', transitions);
+    return transitions;
   }
 
   /**
@@ -530,7 +471,24 @@
   }
 
   /**
+   * Return the keys of a generic object.
+   *
+   * @param {object} obj
+   *   Generic object to convert.
+   * @return {array}
+   *   Of keys from object.
+   */
+  var keys = Object.keys || function (obj) {
+    var arr = [];
+    for (var key in obj) {
+      arr.push(key);
+    }
+    return arr;
+  };
+
+  /**
    * Return the values of a generic object.
+   *   Without falsey values
    *
    * @param {object} obj
    *   Generic object to convert.
@@ -540,7 +498,7 @@
   function values (obj) {
     var arr = [];
     for (var key in obj) {
-      if (obj[key]) {
+      if (obj[key] !== undefined) {
         arr.push(obj[key]);
       }
     }
