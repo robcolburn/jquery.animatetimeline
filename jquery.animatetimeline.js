@@ -97,31 +97,30 @@
     }
   };
   $.animatetimeline.addTransition = function addTransition (element, props, duration, easing) {
-    var map = $.data(element, 'transitions.animatetimeline') || {};
+    var transitions = $.data(element, 'transitions.animatetimeline', $.data(element, 'transitions.animatetimeline') || {});
     for (var prop in props) {
-      if (prop === jsTransform) {
-        prop = cssTransform;
+      if (prop === JS_TRANSFORM) {
+        prop = CSS_TRANSFORM;
       }
-      map[prop] = prop + ' ' + duration + 'ms cubic-bezier(' + (css_easing[easing] || css_easing.ease) + ')';
+      transitions[prop] = prop + ' ' + duration + 'ms cubic-bezier(' + (css_easing[easing] || css_easing.ease) + ')';
     }
-    element.style[Modernizr.prefixed('transition')] = values(map).join(',');
-    $.data(element, 'transitions.animatetimeline', map);
+    element.style[JS_TRANSITION] = values(transitions).join(',');
   };
   $.animatetimeline.removeTransition = function removeTransition (element, props) {
-    var map = $.data(element, 'transitions.animatetimeline') || {};
+    var transitions = $.data(element, 'transitions.animatetimeline', $.data(element, 'transitions.animatetimeline') || {});
     for (var prop in props) {
-      if (prop === jsTransform) {
-        prop = cssTransform;
+      if (prop === JS_TRANSFORM) {
+        prop = CSS_TRANSFORM;
       }
-      map[prop] = null;
+      transitions[prop] = null;
     }
-    element.style[Modernizr.prefixed('transition')] = values(map).join(',');
-    $.data(element, 'transitions.animatetimeline', map);
+    element.style[JS_TRANSITION] = values(transitions).join(',');
   };
 
   // Vender prefix constants
-  var jsTransform = Modernizr.prefixed('transform');
-  var cssTransform = cssProp(jsTransform);
+  var JS_TRANSFORM = Modernizr.prefixed('transform');
+  var JS_TRANSITION = Modernizr.prefixed('transition');
+  var CSS_TRANSFORM = cssProp(JS_TRANSFORM);
 
   /*
    * Wrapper for making keyframe callbacks
@@ -187,7 +186,7 @@
     if (props.left || props.top) {
       props.left = props.left || '0px';
       props.top = props.top || '0px';
-      mapped[jsTransform] = 'translate(' + props.left + ',' + props.top + ')';
+      mapped[JS_TRANSFORM] = 'translate(' + props.left + ',' + props.top + ')';
     }
     return mapped;
   }
