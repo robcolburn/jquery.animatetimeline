@@ -136,7 +136,7 @@
    *   Unused if props is an object
    *   If null/undefined, unsets the transition
    *   Number of milliseconds transition should last.
-   *   Key to easing function in css_easing, defaults to ease-in-out.
+   *   Key to easing function in CSS_EASING, defaults to ease-in-out.
    * @return this
    */
   $.fn.animatetimeline_transition = function (props, duration, easing) {
@@ -154,7 +154,8 @@
   AnimationTimeline.stopAnimate = stopAnimate;
   AnimationTimeline.transition = transition;
   // Export Constants for lookups
-  AnimationTimeline.css_easing = css_easing;
+  AnimationTimeline.CSS_EASING = CSS_EASING;
+  AnimationTimeline.BUFFER = 60;
 
   /**
    * Animates a timeline of steps.
@@ -188,17 +189,24 @@
     this.timeout = null;
     var $element;
     for (var i = 0, l = timeline.length; i < l; i++) {
-      // Do not waste time on invalids, jQuery pattern avoids throwing errors.
-      if (!elements[timeline[i].el]) {
-        continue;
-      }
       // Support jQuery objects, jQuery elements keys, selector elements keys.
-      $element = timeline[i].el.jquery ? timeline[i].el :
-        elements[timeline[i].el].jquery ? elements[timeline[i].el] :
-        $(elements[timeline[i].el]);
+      $element = null;
+      if (timeline[i].el.jquery) {
+        $element = timeline[i].el;
+      } else if (elements[timeline[i].el] && elements[timeline[i].el].jquery) {
+        $element = elements[timeline[i].el];
+      } else if (elements[timeline[i].el]) {
+        $element = $(elements[timeline[i].el]);
+      }
+      // Do not waste time on invalids.
+      if (!$element) {
+        throw new Error('Invalid element ' + i + ':' + timeline[i].el);
+      }
       this.push(new AnimationStep($element.get(0), timeline[i]));
     }
-    this.timeout = setTimeout(callback, this.getDuration() + 45);
+    if (callback) {
+      this.timeout = setTimeout(callback, this.getDuration() + AnimationTimeline.BUFFER);
+    }
     this.play();
   }
   /**
@@ -313,7 +321,7 @@
   AnimationFrame.prototype.getDuration = function () {
     var duration = 0;
     for (var i = 0, l = this.steps.length; i < l; i++) {
-      duration = this.steps[i].duration > duration  ? this.steps[i].duration : duration;
+      duration = Math.max(duration, this.steps[i].duration || 0);
     }
     return duration;
   };
@@ -419,7 +427,7 @@
    *   Unused if props is an object
    *   If null/undefined, unsets the transition
    *   Number of milliseconds transition should last.
-   *   Key to easing function in css_easing, defaults to ease-in-out.
+   *   Key to easing function in CSS_EASING, defaults to ease-in-out.
    * @return {object}
    *   Kay/value map of current transitions.
    */
@@ -435,7 +443,7 @@
         transitions[prop] = !duration ? null : (
           (prop === JS_TRANSFORM ? CSS_TRANSFORM : prop) + ' ' +
           duration + 'ms ' +
-          (css_easing[easing] ? 'cubic-bezier(' + css_easing[easing] + ')' : 'ease-in-out')
+          (CSS_EASING[easing] ? 'cubic-bezier(' + CSS_EASING[easing] + ')' : 'ease-in-out')
         );
       });
     }
@@ -553,7 +561,7 @@
    * @link http://www.robertpenner.com/easing/
    * @link http://matthewlein.com/ceaser/
    */
-  var css_easing = {
+  var CSS_EASING = {
     ease: '0.250, 0.100, 0.250, 1.000',
     easeInQuad: '0.550, 0.085, 0.680, 0.530',
     easeInCubic: '0.550, 0.055, 0.675, 0.190',
