@@ -5,6 +5,7 @@
  * To minify:
  *   uglifyjs jquery.animatetimeline.js -mc -o jquery.animatetimeline.min.js
  *
+ * @requires Modernizr
  * @example With parent element
   var elements: {
     'bg': '.background',
@@ -71,11 +72,21 @@
    * @return this
    */
   $.fn.animatetimeline = function (elements, timeline, callback) {
+    // Support jQuery-style multi-element application
     if (this.length > 1) {
       return this.each(function () {
         $(this).animatetimeline(elements, timeline, callback);
       });
     }
+    // Support direct calling of child methods via string.
+    if (arguments.length === 1 && typeof elements === 'string') {
+      var instance = this.data('animatetimeline');
+      var args = Array.prototype.slice.call(arguments, 1);
+      if (instance) {
+        return instance[elements].apply(instance, args);
+      }
+    }
+    // Support optional elements parameter.
     if (arguments.length === 1 ||
       (arguments.length === 2 && typeof timeline === 'function')
     ) {
@@ -84,16 +95,50 @@
       elements = {};
     }
     for (var key in elements) {
+      // Support passing elements as jQuery objects.
+      if (!elements[key] || !elements[key].jquery) {
+        continue;
+      }
+      // Support passing elements as child selectors.
       elements[key] = this.find(elements[key]);
     }
-    elements.el = this;
-    animateTimeline(elements, timeline, callback);
+    // Support a default element corresponding to this node.
+    if (!elements.el) {
+      elements.el = this;
+    }
+    // Store the instance for direct access.
+    this.data('animatetimeline', new AnimationTimeline(elements, timeline, callback));
     return this;
   };
 
+  // Export Classes globally for possible extension.
+  $.animatetimeline = AnimationTimeline;
+  AnimationTimeline.Frame = AnimationFrame;
+  AnimationTimeline.Step = AnimationStep;
+  // Export Utility Functions globaly for possible extension.
+  AnimationTimeline.animate = animate;
+  AnimationTimeline.stopAnimate = stopAnimate;
+  AnimationTimeline.addTransitions = addTransitions;
+  AnimationTimeline.addTransition = addTransition;
+  AnimationTimeline.removeTransitions = removeTransitions;
+  AnimationTimeline.removeTransition = removeTransition;
+  AnimationTimeline.clearTransitions = clearTransitions;
+  // Export Constants for lookups
+  AnimationTimeline.css_easing = css_easing;
+
   /**
-   * Starts animating a timeline of steps
+   * Animates a timeline of steps.
    *
+   * Data Structure:
+   * Timeline < startTime : Frame < Step[] > >
+   * A Timeline contains a map of Frames, such that the keys are
+   * start-times relative to the animation as a whole.
+   * A Frame contains an array of Steps, that will execute at a
+   * specifc start-time.
+   * A Step contains a specific set of instructions to apply to a
+   * single element.
+   *
+   * @constructor
    * @param {object<string:jQuery>} elements
    *   Optional. Map of string names to jQuery objects
    *   skips to timeline if not specified.
@@ -103,30 +148,170 @@
    *   Called when last timeline step has completed
    * @return this
    */
-  $.animatetimeline = function animateTimeline (elements, timeline, callback) {
-    var step;
-    var i;
-    var frames = {};
-    var totalDuration = 0;
-    for (i in timeline) {
-      step = timeline[i];
-      step.$el = elements[step.el];
-      if (!frames[step.start]) {
-        frames[step.start] = [step];
-      } else {
-        frames[step.start].push(step);
-      }
-      if (step.duration && step.duration + step.start > totalDuration) {
-        totalDuration = step.duration + step.start;
-      }
+  function AnimationTimeline (elements, timeline, callback) {
+    if ( ! (this instanceof AnimationTimeline) ) {
+      return new AnimationTimeline(elements, timeline, callback);
     }
-    for (var startTime in frames) {
-      setTimeout(getKeyframe(frames[startTime]), startTime);
+    this.frames = {};
+    this.duration = 0;
+    this.promise = $.Deferred();
+    this.callback = callback;
+    this.timeout = null;
+    for (var i = 0, l = timeline.length; i < l; i++) {
+      this.push(new AnimationStep(elements[timeline[i].el], timeline[i]));
     }
-    if (callback) {
-      setTimeout(callback, totalDuration);
+  }
+  /**
+   * Start the timeline animation.
+   */
+  AnimationTimeline.prototype.play = function () {
+    var timeouts = [];
+    for (var startTime in this.frames) {
+      this.frames[startTime].play();
+    }
+    this.timeout = setTimeout(this.callback, this.getDuration());
+  };
+  /**
+   * Stop the timeline animation.
+   */
+  AnimationTimeline.prototype.stop = function () {
+    for (var startTime in this.frames) {
+      this.frames[startTime].stop();
+    }
+    if (this.timeout !== null) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
     }
   };
+  /**
+   * Add a step to the timeline.
+   *
+   * @param {AnimationStep} animationStep
+   *   The step of animation to add to this timeline.
+   */
+  AnimationTimeline.prototype.push = function (animationStep) {
+    if (!this.frames[animationStep.start]) {
+      this.frames[animationStep.start] = new AnimationFrame(animationStep.start);
+    }
+    this.frames[animationStep.start].push(animationStep);
+  };
+  /**
+   * Get the duration of the entire timeline.
+   */
+  AnimationTimeline.prototype.getDuration = function () {
+    var duration = 0;
+    for (var startTime in this.frames) {
+      duration = Math.max(duration, this.frames[startTime].getTotalTime());
+    }
+    return duration;
+  };
+
+  /**
+   * A frame of animation.
+   *
+   * Contains an array of all instructions to execture.
+   * @param {}
+   */
+  function AnimationFrame (start) {
+    this.steps = [];
+    this.start = start;
+    this.delayTimeout = null;
+    this.runTimeout = null;
+    this.isRunning = false;
+  }
+  /**
+   * Add a step to this animation frame.
+   */
+  AnimationFrame.prototype.push = function (step) {
+    this.steps.push(step);
+  };
+  /**
+   * Queue Animations of this frame to start time.
+   */
+  AnimationFrame.prototype.play = function () {
+    var self = this;
+    this.delayTimeout = setTimeout(function () {
+      self.run();
+      self.delayTimeout = null;
+    }, this.start);
+  };
+  /**
+   * Stop animations and enqueued animations of this frame.
+   */
+  AnimationFrame.prototype.stop = function () {
+    if (this.delayTimeout !== null) {
+      clearTimeout(this.delayTimeout);
+      this.delayTimeout = null;
+    }
+    if (this.runTimeout !== null) {
+      clearTimeout(this.runTimeout);
+      this.runTimeout = null;
+    }
+    if (this.isRunning) {
+      for (var i = 0, l = this.steps.length; i < l; i++) {
+        this.steps[i].stop();
+      }
+      this.isRunning = false;
+    }
+  };
+  /**
+   * Play animations attached to this animation frame.
+   */
+  AnimationFrame.prototype.run = function () {
+    var self = this;
+    for (var i = 0, l = this.steps.length; i < l; i++) {
+      this.steps[i].run();
+    }
+    this.isRunning = true;
+    this.runTimeout = setTimeout(function () {
+      self.isRunning = false;
+      self.runTimeout = null;
+    });
+  };
+  /**
+   * Get the duration of this frame of animation.
+   */
+  AnimationFrame.prototype.getDuration = function () {
+    var duration = 0;
+    for (var i = 0, l = this.steps.length; i < l; i++) {
+      duration = this.steps[i].duration > duration  ? this.steps[i].duration : duration;
+    }
+    return duration;
+  };
+  /**
+   * Get the total time of this frame of animation,
+   * considering delayed start time.
+   */
+  AnimationFrame.prototype.getTotalTime = function () {
+    return this.start + this.getDuration();
+  };
+
+  /**
+   * Represents a single animation step.
+   * @constructor
+   * @param {jQuery} $el
+   *   The element to be animated.
+   * @param {object} step
+   *   How to animate the element.
+   *   {integer} start: milliseconds of delay before animation start
+   *   {object<css property: css value>} props : css properties to apply.
+   *   {integer} duration (optional) milliseconds of duration of animation.
+   *   {string} easing (optional) easing function to use.
+   */
+  function AnimationStep ($el, step) {
+    this.$el = $el;
+    this.start = step.start;
+    this.duration = step.duration;
+    this.props = step.props;
+    this.easing = step.easing;
+  }
+  AnimationStep.prototype.run = function () {
+    animate(this.$el, this.props, this.duration, this.easing);
+  };
+  AnimationStep.prototype.stop = function () {
+    stopAnimate(this.$el, this.props);
+  };
+
 
   /**
    * Apply a set of CSS transition properties.
@@ -142,7 +327,7 @@
    * @return {object}
    *   Kay/value map of current transitions.
    */
-  $.animatetimeline.addTransitions = function addTransitions (element, props, duration, easing) {
+  function addTransitions (element, props, duration, easing) {
     var transitions = $.data(element, 'transitions.animatetimeline') || {};
     for (var prop in props) {
       if (prop === JS_TRANSFORM) {
@@ -153,7 +338,7 @@
     element.style[JS_TRANSITION] = values(transitions).join(',');
     $.data(element, 'transitions.animatetimeline', transitions);
     return transitions;
-  };
+  }
 
   /**
    * Apply a single CSS transition property.
@@ -169,7 +354,7 @@
    * @return {object}
    *   Kay/value map of current transitions.
    */
-  $.animatetimeline.addTransition = function addTransition (element, prop, duration, easing) {
+  function addTransition (element, prop, duration, easing) {
     var transitions = $.data(element, 'transitions.animatetimeline') || {};
     if (prop === JS_TRANSFORM) {
       prop = CSS_TRANSFORM;
@@ -178,7 +363,7 @@
     element.style[JS_TRANSITION] = values(transitions).join(',');
     $.data(element, 'transitions.animatetimeline', transitions);
     return transitions;
-  };
+  }
 
   /**
    * Remove a set of CSS transition properties.
@@ -190,7 +375,7 @@
    * @return {object}
    *   Kay/value map of current transitions.
    */
-  $.animatetimeline.removeTransitions = function removeTransitions (element, props) {
+  function removeTransitions (element, props) {
     var transitions = $.data(element, 'transitions.animatetimeline') || {};
     for (var prop in props) {
       if (prop === JS_TRANSFORM) {
@@ -201,7 +386,7 @@
     element.style[JS_TRANSITION] = values(transitions).join(',');
     $.data(element, 'transitions.animatetimeline', transitions);
     return transitions;
-  };
+  }
 
   /**
    * Remove a single CSS transition properties.
@@ -209,17 +394,17 @@
    * @param {DOMElement}
    *   Raw DOM ELement to apply transtion to.
    * @param {string} prop
-   *   CSS property to un-transition
+   *   CSS property to un-transition.
    * @return {object}
    *   Kay/value map of current transitions.
    */
-  $.animatetimeline.removeTransition = function addTransition (element, prop) {
+  function removeTransition (element, prop) {
     var transitions = $.data(element, 'transitions.animatetimeline') || {};
     transitions[prop] = null;
     element.style[JS_TRANSITION] = values(transitions).join(',');
     $.data(element, 'transitions.animatetimeline', transitions);
     return transitions;
-  };
+  }
 
   /**
    * Remove all CSS transition properties.
@@ -229,11 +414,11 @@
    * @return {object}
    *   Kay/value map of current transitions.
    */
-  $.animatetimeline.clearTransitions = function clearTransitions (element, prop) {
+  function clearTransitions (element, prop) {
     var transitions = $.data(element, 'transitions.animatetimeline', {});
     element.style[JS_TRANSITION] = '';
     return transitions;
-  };
+  }
 
 
   // Vender prefix constants
@@ -241,29 +426,19 @@
   var JS_TRANSITION = Modernizr.prefixed('transition');
   var CSS_TRANSFORM = cssProp(JS_TRANSFORM);
 
-  /*
-   * Wrapper for making keyframe callbacks
-   * @param {Object[]} set of animation steps to apply
-   */
-  function getKeyframe (steps) {
-    return function () {
-      for (var i = 0, l = steps.length; i < l; i++) {
-        animate(steps[i].$el, steps[i].name, steps[i].props, steps[i].duration, steps[i].easing);
-      }
-    };
-  }
-
-  /*
+  /**
    * A simpler static version $.fn.animate w/ Transitions & Transforms support
    * 
-   * @param {jQuery} $el element to be animated
-   * @param {string} name element to be animated (just for debugging)
-   * @param {Map} props : css properties to apply
-   * @param {Integer} duration (optional) amout of time to animate
-   * @param {String} easing (optional) easing function to use 
-   * @requires Modernizr
+   * @param {jQuery} $el
+   *   Element to be animated
+   * @param {object<css property: css value>} props
+   *   CSS properties to apply.
+   * @param {integer} duration (optional)
+   *   Milliseconds of duration of animation.
+   * @param {string} easing (optional)
+   *   Easing function to use. Default: 'easeOutQuad'.
    */
-  function animate ($el, name, props, duration, easing) {
+  function animate ($el, props, duration, easing) {
     easing = easing || 'easeOutQuad';
     if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
       props = getPropsForCSS3(props);
@@ -277,13 +452,28 @@
     } else {
       props = getPropsForAnimate(props);
       if (duration) {
-        $el.animate(props, duration, easing);
+        $el.animate(props, {duration: duration, easing: easing, queue: 'animatetimeline'});
       } else {
         $el.css(props);
       }
     }
     if (props.display === 'block') {
-      $el.offset().left; // force reflow
+      // Force reflow.
+      $.noop($el.offset().left);
+    }
+  }
+
+  /**
+   * The corresponding $.fn.stop to the animate function.
+   *
+   * @param {jQuery} $el
+   *   Element to cease animations on.
+   */
+  function stopAnimate ($el) {
+    if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
+      clearTransitions($el.get(0), props);
+    } else {
+      $el.stop('animatetimeline', true, true);
     }
   }
 
@@ -291,9 +481,9 @@
    * Applies any specific prop translates for CSS3
    *
    * @param {object} props
-   *   CSS Properties to be translated
+   *   CSS Properties to be translated.
    * @return {object}
-   *   Translated CSS Properties
+   *   Translated CSS Properties.
    */
   function getPropsForCSS3 (props) {
     var mapped = {};
@@ -311,12 +501,12 @@
   }
 
   /**
-   * Applies any specific prop translates for jQuery.animate
+   * Applies any specific prop translates for jQuery.animate.
    *
    * @param {object} props
-   *   CSS Properties to be translated
+   *   CSS Properties to be translated.
    * @return {object}
-   *   Translated CSS Properties
+   *   Translated CSS Properties.
    */
   function getPropsForAnimate (props) {
     var mapped = {};
@@ -338,6 +528,7 @@
 
   /**
    * Return the values of a generic object.
+   *
    * @param {object} obj
    *   Generic object to convert.
    * @return {array}
@@ -357,7 +548,8 @@
    * Easing funcitons for CSS3
    *
    * Penner's equations
-   * http://www.robertpenner.com/easing/ | http://matthewlein.com/ceaser/
+   * @link http://www.robertpenner.com/easing/
+   * @link http://matthewlein.com/ceaser/
    */
   var css_easing = {
     ease: '0.250, 0.100, 0.250, 1.000',
