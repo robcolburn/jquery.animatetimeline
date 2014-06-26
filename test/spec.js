@@ -3,21 +3,26 @@ $(function($){
 describe("jquery.animatetimeline", function(){
   chai.should();
   beforeEach(function () {
-    $('#temp').remove();
     $('body').append('<div id="temp" />');
+  });
+  afterEach(function () {
+    $('#temp').remove();
   });
 
   it('Animates a simple slide with text', function (done) {
     this.timeout(3*1000);
     $('#temp').html(
-      '<div id="slide">'+
-      '<div class="bg"/>'+
-      '<div class="tx"/>'+
+      '<div id="parent" style="position: absolute;top:0;left:0;width:100%;height:300px">'+
+      '<div id="slide" style="position: absolute;top:0;left:0;width:100%;height:300px">'+
+      '<div class="background" style="background:red;position:relative;height:100%;width:100%"/>'+
+      '<div class="text" style="color:white;position:absolute;top:50px;left:50px">'+
+      'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry</div>'+
+      '</div>'+
       '</div>'
     );
     var elements = {
-      'bg': '.bg',
-      'tx': '.tx'
+      'bg': '.background',
+      'tx': '.text'
     };
     var timeline = [
       // Prep
@@ -72,19 +77,22 @@ describe("jquery.animatetimeline", function(){
   it('Animates a simple slide with text', function (done) {
     this.timeout(3*1000);
     $('#temp').html(
-      '<div id="slide1" style="">'+
-      '<div class="background"/>'+
-      '<div class="text"/>'+
+      '<div id="parent" style="position: absolute;top:0;left:0;width:100%;height:300px">'+
+      '<div id="slide1" style="position: absolute;top:0;left:0;width:100%;height:300px">'+
+      '<div class="background" style="background:red;position:relative;height:100%;width:100%"/>'+
+      '<div class="text" style="color:white;position:absolute;top:50px;left:50px">'+
+      'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry</div>'+
       '</div>'+
-      '<div id="slide2">'+
-      '<div class="background"/>'+
-      '<div class="text"/>'+
+      '<div id="slide2" style="position: absolute;top:0;left:0;width:100%;height:300px">'+
+      '<div class="background" style="background:blue;position:relative;height:100%;width:100%;display:none"/>'+
+      '<div class="text" style="color:white;position:absolute;top:50px;left:50px;display:none">'+
+      'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry</div>'+
       '</div>'
     );
     var elements = {
      'oldBack': $('#slide1 .background'),
-     'newBack': $('#slide2 .background'),
      'oldText': $('#slide1 .text'),
+     'newBack': $('#slide2 .background'),
      'newText': $('#slide2 .text')
     };
     // This transition requires two elements name "new" and "old"
