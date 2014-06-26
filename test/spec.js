@@ -37,37 +37,37 @@ describe("jquery.animatetimeline", function(){
     $('#slide').animatetimeline(elements, timeline, function () {
       // all done
       $('#slide').css('display').should.equal('block');
-      $('#slide .bg').css('opacity').should
+      $('#slide .background').css('opacity').should
         .equal('1');
-      $('#slide .tx').css('opacity').should
+      $('#slide .text').css('opacity').should
         .equal('1');
       if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
-        $('#slide .bg').css('transition').should
+        $('#slide .background').css('transition').should
           .contain('opacity').contain('transform')
           .match(/2s|2000ms/);
-        $('#slide .tx').css('transition').should
+        $('#slide .text').css('transition').should
           .contain('opacity').contain('transform')
           .match(/1s|1000ms/);
         // Sometimes we get fancy matrix conversion
-        if ($('#slide .bg').css('transform').match(/matrix/)) {
-          $('#slide .bg').css('transform').should
+        if ($('#slide .background').css('transform').match(/matrix/)) {
+          $('#slide .background').css('transform').should
             .contain('matrix').contain('500');
-          $('#slide .tx').css('transform').should
+          $('#slide .text').css('transform').should
             .contain('matrix').contain('5500');
         } else {
-          $('#slide .bg').css('transform').should
+          $('#slide .background').css('transform').should
             .contain('translate').contain('500px');
-          $('#slide .tx').css('transform').should
+          $('#slide .text').css('transform').should
             .contain('translate').contain('5500px');
         }
       } else if (Modernizr.csstransitions) {
-        $('#slide .tx').css('transition').should
+        $('#slide .text').css('transition').should
           .contain('opacity').contain('left')
           .match(/1s|1000ms/);
-        $('#slide .tx').css('left').should
+        $('#slide .text').css('left').should
           .equal('5500px');
       } else {
-        $('#slide .tx').css('left').should
+        $('#slide .text').css('left').should
           .equal('5500px');
       }
       done();
