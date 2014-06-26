@@ -5,7 +5,6 @@
  * To minify:
  *   uglifyjs jquery.animatetimeline.js -mc -o jquery.animatetimeline.min.js
  *
- * @requires Modernizr
  * @example With parent element
   var elements = {
     'bg': '.background',
@@ -57,8 +56,7 @@
    // all done
  });
 */
-/*global Modernizr*/
-(function ($, Modernizr) {
+(function ($) {
   /**
    * Starts animating a timeline of steps
    *
@@ -344,8 +342,8 @@
   };
 
   // Vender prefix constants
-  var JS_TRANSFORM = Modernizr.prefixed('transform');
-  var JS_TRANSITION = Modernizr.prefixed('transition');
+  var JS_TRANSFORM = prefixed('transform');
+  var JS_TRANSITION = prefixed('transition');
   var CSS_TRANSFORM = cssProp(JS_TRANSFORM);
 
   /**
@@ -361,8 +359,8 @@
    *   Easing function to use. Default: 'easeOutQuad'.
    */
   function animate ($el, props, duration, easing) {
-    if (Modernizr.csstransitions) {
-      if (Modernizr.csstransforms) {
+    if (JS_TRANSITION) {
+      if (JS_TRANSFORM) {
         props = mapTransformProps(props);
       }
       transition($el.get(0), keys(props), duration, easing);
@@ -387,7 +385,7 @@
    *   Element to cease animations on.
    */
   function stopAnimate ($el) {
-    if (Modernizr.csstransitions) {
+    if (JS_TRANSITION) {
       clearTransitions($el.get(0), props);
     } else {
       $el.stop('animatetimeline', true, true);
@@ -460,9 +458,37 @@
     return mapped;
   }
 
+  /**
+   * Get the prefixed JS Style prop for a given css prop.
+   * @param {string} cssProp
+   *   Common name for the css property
+   * @return {string}
+   *   Prefixed property for JS DOM
+   */
+  function prefixed (cssProp) {
+    try {
+      var el = document.createElement('div');
+      if (typeof el.style[cssProp] !== 'undefined') {
+        return cssProp;
+      }
+      cssProp = cssProp.charAt(0).toUpperCase() + cssProp.slice(1);
+      var prefixes = ['webkit', 'Moz', 'ms', 'O'];
+      for (var i = 0; i < prefixes.length; i++) {
+        if (typeof el.style[prefixes[i] + cssProp] !== 'undefined') {
+          return prefixes[i] + cssProp;
+        }
+      }
+    } catch (e) { }
+    return '';
+  }
+
   /*
    * Returns a css prop from a js-dom prop name
    * Thanks Modernizer! http://modernizr.com/docs/#prefixed
+   * @param {string} jsProp
+   *   Prefixed property for JS DOM
+   * @return {string}
+   *   Prefixed propery for CSS
    */
   function cssProp (jsProp) {
     return jsProp && jsProp.replace(/([A-Z])/g, function(str,m1){
@@ -542,4 +568,4 @@
     easeInOutBack: '0.680, -0.550, 0.265, 1.550'
   };
 
-})(jQuery, Modernizr);
+})(jQuery);
