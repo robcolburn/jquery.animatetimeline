@@ -59,6 +59,11 @@
 /*global Modernizr*/
 (function ($, Modernizr) {
   $.fn.animatetimeline = function (elements, timeline, callback) {
+    if (this.length > 1) {
+      return this.each(function () {
+        $(this).animatetimeline(elements, timeline, callback);
+      });
+    }
     if (arguments.length === 1 ||
       (arguments.length === 2 && typeof timeline === 'function')
     ) {
@@ -71,6 +76,7 @@
     }
     elements.el = this;
     animateTimeline(elements, timeline, callback);
+    return this;
   };
   $.animatetimeline = function animateTimeline (elements, timeline, callback) {
     var step;
