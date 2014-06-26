@@ -98,40 +98,24 @@
   };
   $.animatetimeline.addTransition = function addTransition (element, props, duration, easing) {
     var map = $.data(element, 'transitions.animatetimeline') || {};
-    var transitions = [];
-    var prop;
-    for (prop in props) {
+    for (var prop in props) {
       if (prop === jsTransform) {
         prop = cssTransform;
       }
       map[prop] = prop + ' ' + duration + 'ms cubic-bezier(' + (css_easing[easing] || css_easing.ease) + ')';
     }
-    for (prop in map) {
-      if (map[prop]) {
-        transitions.push(map[prop]);
-      }
-    }
-    transitions = transitions.join(',');
-    element.style[Modernizr.prefixed('transition')] = transitions;
+    element.style[Modernizr.prefixed('transition')] = values(map).join(',');
     $.data(element, 'transitions.animatetimeline', map);
   };
   $.animatetimeline.removeTransition = function removeTransition (element, props) {
     var map = $.data(element, 'transitions.animatetimeline') || {};
-    var transitions = [];
-    var prop;
-    for (prop in props) {
+    for (var prop in props) {
       if (prop === jsTransform) {
         prop = cssTransform;
       }
-      map[prop] = '';
+      map[prop] = null;
     }
-    for (prop in map) {
-      if (map[prop]) {
-        transitions.push(map[prop]);
-      }
-    }
-    transitions = transitions.join(',');
-    element.style[Modernizr.prefixed('transition')] = transitions;
+    element.style[Modernizr.prefixed('transition')] = values(map).join(',');
     $.data(element, 'transitions.animatetimeline', map);
   };
 
@@ -233,6 +217,23 @@
     return jsProp && jsProp.replace(/([A-Z])/g, function(str,m1){
       return '-' + m1.toLowerCase();
     }).replace(/^ms-/,'-ms-');
+  }
+
+  /**
+   * Return the values of a generic object.
+   * @param {object} obj
+   *   Generic object to convert.
+   * @return {array}
+   *   Of keys from object.
+   */
+  function values (obj) {
+    var arr = [];
+    for (var key in obj) {
+      if (obj[key]) {
+        arr.push(obj[key]);
+      }
+    }
+    return arr;
   }
 
   /**
