@@ -1,0 +1,18 @@
+{
+  "name": "jquery.animatetimeline",
+  "version": "1.0.0",
+  "description": "Provides the ability to animate a declaritive animation timeline.",
+  "author": "Rob Colburn <rob@robcolburn.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robcolburn/jquery.animatetimeline.git"
+  },
+  "devDependencies": {
+    "jquery": "^2.1.1",
+    "chai": "^1.9.1",
+    "mocha": "^1.18.2"
+  },
+  "engines": {
+    "node": ">=0.8.0"
+  }
+}

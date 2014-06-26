@@ -1,13 +1,13 @@
 /**
- * jQuery.animatetimeline
- * Library provides the ability to animate a declaritive animation timeline
+ * jquery.animatetimeline
+ * Provides the ability to animate a declaritive animation timeline.
  *
  * To minify:
  *   uglifyjs jquery.animatetimeline.js -mc -o jquery.animatetimeline.min.js
  *
  * @requires Modernizr
  * @example With parent element
-  var elements: {
+  var elements = {
     'bg': '.background',
     'tx': '.text'
   };
@@ -21,15 +21,15 @@
     {start: 0,    el: 'bg', props: {left: 0, opacity: 1}, duration: 2000},
     {start: 1000, el: 'tx', props: {left: 0, opacity: 1}, duration: 1000},
   ];
-  $('#slide1').animateTimeline(elements, timeline, function () {
+  $('#slide1').animatetimeline(elements, timeline, function () {
     // all done
   });
  *
  * @example w/o Parent element
  *  
   var elements = {
-   'newBg': $('#slide1 .bg'),
-   'oldBg': $('#slide2 .bg'),
+   'newBg': $('#slide1 .background'),
+   'oldBg': $('#slide2 .background'),
    'newText': $('#slide1 .text'),
    'oldText': $('#slide2 .text')
   };
@@ -53,7 +53,7 @@
     // Clean-up old BG
     {start: 2060, el: 'oldBack', props: {zIndex: 5, display: 'none'}}
  ];
- $.animateTimeline(elements, timeline, function () {
+ $.animatetimeline(elements, timeline, function () {
    // all done
  });
 */
