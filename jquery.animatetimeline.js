@@ -72,54 +72,7 @@
     elements.el = this;
     animateTimeline(elements, timeline, callback);
   };
-  $.animatetimeline = function (elements, timeline, callback) {
-    animateTimeline(elements, timeline, callback);
-  };
-
-  var jsTransform = Modernizr.prefixed('transform');
-  var cssTransform = cssProp(jsTransform);
-  $.fn.addTransitionsAT = function (props, duration, easing) {
-    var map = this.data('transitionsAT') || {};
-    var transitions = [];
-    var prop;
-    for (prop in props) {
-      if (prop === jsTransform) {
-        prop = cssTransform;
-      }
-      map[prop] = prop + ' ' + duration + 'ms cubic-bezier(' + (css_easing[easing] || css_easing.ease) + ')';
-    }
-    for (prop in map) {
-      if (map[prop]) {
-        transitions.push(map[prop]);
-      }
-    }
-    transitions = transitions.join(',');
-    this[0].style[Modernizr.prefixed('transition')] = transitions;
-    this.data('transitionsAT', map);
-    return this;
-  };
-  $.fn.removeTranstionsAT = function (props) {
-    var map = this.data('transitionsAT') || {};
-    var transitions = [];
-    var prop;
-    for (prop in props) {
-      if (prop === jsTransform) {
-        prop = cssTransform;
-      }
-      map[prop] = '';
-    }
-    for (prop in map) {
-      if (map[prop]) {
-        transitions.push(map[prop]);
-      }
-    }
-    transitions = transitions.join(',');
-    this[0].style[Modernizr.prefixed('transition')] = transitions;
-    this.data('transitionsAT', map);
-    return this;
-  };
-
-  function animateTimeline (elements, timeline, callback) {
+  $.animatetimeline = function animateTimeline (elements, timeline, callback) {
     var step;
     var i;
     var frames = {};
@@ -142,7 +95,49 @@
     if (callback) {
       setTimeout(callback, totalDuration);
     }
-  }
+  };
+  $.animatetimeline.addTransition = function addTransition (element, props, duration, easing) {
+    var map = $.data(element, 'transitions.animatetimeline') || {};
+    var transitions = [];
+    var prop;
+    for (prop in props) {
+      if (prop === jsTransform) {
+        prop = cssTransform;
+      }
+      map[prop] = prop + ' ' + duration + 'ms cubic-bezier(' + (css_easing[easing] || css_easing.ease) + ')';
+    }
+    for (prop in map) {
+      if (map[prop]) {
+        transitions.push(map[prop]);
+      }
+    }
+    transitions = transitions.join(',');
+    element.style[Modernizr.prefixed('transition')] = transitions;
+    $.data(element, 'transitions.animatetimeline', map);
+  };
+  $.animatetimeline.removeTransition = function removeTransition (element, props) {
+    var map = $.data(element, 'transitions.animatetimeline') || {};
+    var transitions = [];
+    var prop;
+    for (prop in props) {
+      if (prop === jsTransform) {
+        prop = cssTransform;
+      }
+      map[prop] = '';
+    }
+    for (prop in map) {
+      if (map[prop]) {
+        transitions.push(map[prop]);
+      }
+    }
+    transitions = transitions.join(',');
+    element.style[Modernizr.prefixed('transition')] = transitions;
+    $.data(element, 'transitions.animatetimeline', map);
+  };
+
+  // Vender prefix constants
+  var jsTransform = Modernizr.prefixed('transform');
+  var cssTransform = cssProp(jsTransform);
 
   /*
    * Wrapper for making keyframe callbacks
@@ -171,10 +166,10 @@
     if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
       props = getPropsForCSS3(props);
       if (duration) {
-        $el.addTransitionsAT(props, duration, easing);
+        addTransition($el.get(0), props, duration, easing);
         $el.css(props);
       } else {
-        $el.removeTranstionsAT(props);
+        removeTransition($el.get(0), props);
         $el.css(props);
       }
     } else {
