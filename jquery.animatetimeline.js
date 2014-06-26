@@ -213,13 +213,28 @@
    * @return {object}
    *   Kay/value map of current transitions.
    */
-  $.animatetimeline.removeTransition = function addTransition (element, prop, duration, easing) {
+  $.animatetimeline.removeTransition = function addTransition (element, prop) {
     var transitions = $.data(element, 'transitions.animatetimeline') || {};
     transitions[prop] = null;
     element.style[JS_TRANSITION] = values(transitions).join(',');
     $.data(element, 'transitions.animatetimeline', transitions);
     return transitions;
   };
+
+  /**
+   * Remove all CSS transition properties.
+   *
+   * @param {DOMElement}
+   *   Raw DOM ELement to apply transtion to.
+   * @return {object}
+   *   Kay/value map of current transitions.
+   */
+  $.animatetimeline.clearTransitions = function clearTransitions (element, prop) {
+    var transitions = $.data(element, 'transitions.animatetimeline', {});
+    element.style[JS_TRANSITION] = '';
+    return transitions;
+  };
+
 
   // Vender prefix constants
   var JS_TRANSFORM = Modernizr.prefixed('transform');
