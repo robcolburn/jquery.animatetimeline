@@ -139,11 +139,12 @@
    * single element.
    *
    * @constructor
-   * @param {object<string:jQuery>} elements
-   *   Optional. Map of string names to jQuery objects
+   * @param {object<string:jQuery selector>} elements
+   *   Optional. Map of string names to jQuery objects or selectors
    *   skips to timeline if not specified.
    * @param {object[]} timeline
    *   Required. Array of timeline steps, see animate() for details
+   *   - el: jQuery object | (string) elements key
    * @param {function} callback
    *   Called when last timeline step has completed
    * @return this
@@ -154,12 +155,21 @@
     }
     this.frames = {};
     this.duration = 0;
-    this.promise = $.Deferred();
-    this.callback = callback;
     this.timeout = null;
+    var $el;
     for (var i = 0, l = timeline.length; i < l; i++) {
-      this.push(new AnimationStep(elements[timeline[i].el], timeline[i]));
+      // Do not waste time on invalids, jQuery pattern avoids throwing errors.
+      if (!elements[timeline[i].el]) {
+        continue;
+      }
+      // Support jQuery objects, jQuery elements keys, selector elements keys.
+      $el = timeline[i].el.jquery ? timeline[i].el :
+        elements[timeline[i].el].jquery ? elements[timeline[i].el] :
+        $(elements[timeline[i].el]);
+      this.push(new AnimationStep($el, timeline[i]));
     }
+    this.timeout = setTimeout(callback, this.getDuration());
+    this.play();
   }
   /**
    * Start the timeline animation.
@@ -169,7 +179,6 @@
     for (var startTime in this.frames) {
       this.frames[startTime].play();
     }
-    this.timeout = setTimeout(this.callback, this.getDuration());
   };
   /**
    * Stop the timeline animation.
@@ -304,6 +313,9 @@
     this.duration = step.duration;
     this.props = step.props;
     this.easing = step.easing;
+    if (!this.$el.length) {
+      throw new Error('Invalid Step');
+    }
   }
   AnimationStep.prototype.run = function () {
     animate(this.$el, this.props, this.duration, this.easing);
