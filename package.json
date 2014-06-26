@@ -8,8 +8,8 @@
     "url": "https://github.com/robcolburn/jquery.animatetimeline.git"
   },
   "devDependencies": {
-    "jquery": "^2.1.1",
     "chai": "^1.9.1",
+    "jquery": "^2.1.1",
     "mocha": "^1.18.2"
   },
   "engines": {

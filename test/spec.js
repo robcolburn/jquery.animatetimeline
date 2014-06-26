@@ -2,34 +2,69 @@
 $(function($){
 $('body').append('<div id="temp" />');
 describe("jquery.animatetimeline", function(){
+  chai.should();
   afterEach(function () {
     $('#temp').empty();
   });
 
   it('Animates a simple slide with text', function (done) {
-    this.timeout(2100);
+    this.timeout(3*1000);
     $('#temp').html(
       '<div id="slide">'+
-      '<div class="background"/>'+
-      '<div class="text"/>'+
+      '<div class="bg"/>'+
+      '<div class="tx"/>'+
       '</div>'
     );
     var elements = {
-      'bg': '.background',
-      'tx': '.text'
+      'bg': '.bg',
+      'tx': '.tx'
     };
     var timeline = [
       // Prep
       {start: 0,    el: 'el', props: {display: 'none'}},
-      {start: 0,    el: 'bg', props: {left: 600, opacity: 0}},
-      {start: 0,    el: 'tx', props: {left: 30, opacity: 0}},
+      {start: 0,    el: 'bg', props: {left: '0px', opacity: 0}},
+      {start: 0,    el: 'tx', props: {left: '0px', opacity: 0}},
       {start: 0,    el: 'el', props: {display: 'block'}},
       // Intro
-      {start: 0,    el: 'bg', props: {left: 0, opacity: 1}, duration: 2000},
-      {start: 1000, el: 'tx', props: {left: 0, opacity: 1}, duration: 1000},
+      {start: 0,    el: 'bg', props: {left: '500px', opacity: 1}, duration: 2000},
+      {start: 1000, el: 'tx', props: {left: '5500px', opacity: 1}, duration: 1000},
     ];
     $('#slide').animatetimeline(elements, timeline, function () {
       // all done
+      $('#slide').css('display').should.equal('block');
+      $('#slide .bg').css('opacity').should
+        .equal('1');
+      $('#slide .tx').css('opacity').should
+        .equal('1');
+      if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
+        $('#slide .bg').css('transition').should
+          .contain('opacity').contain('transform')
+          .match(/2s|2000ms/);
+        $('#slide .tx').css('transition').should
+          .contain('opacity').contain('transform')
+          .match(/1s|1000ms/);
+        // Sometimes we get fancy matrix conversion
+        if ($('#slide .bg').css('transform').match(/matrix/)) {
+          $('#slide .bg').css('transform').should
+            .contain('matrix').contain('500');
+          $('#slide .tx').css('transform').should
+            .contain('matrix').contain('5500');
+        } else {
+          $('#slide .bg').css('transform').should
+            .contain('translate').contain('500px');
+          $('#slide .tx').css('transform').should
+            .contain('translate').contain('5500px');
+        }
+      } else if (Modernizr.csstransitions) {
+        $('#slide .tx').css('transition').should
+          .contain('opacity').contain('left')
+          .match(/1s|1000ms/);
+        $('#slide .tx').css('left').should
+          .equal('5500px');
+      } else {
+        $('#slide .tx').css('left').should
+          .equal('5500px');
+      }
       done();
     });
   });

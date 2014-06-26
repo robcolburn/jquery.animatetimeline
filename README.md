@@ -13,12 +13,12 @@ var elements = {
 var timeline = [
   // Prep
   {start: 0,    el: 'el', props: {display: 'none'}},
-  {start: 0,    el: 'bg', props: {left: 600, opacity: 0}},
-  {start: 0,    el: 'tx', props: {left: 30, opacity: 0}},
+  {start: 0,    el: 'bg', props: {left: '600px', opacity: 0}},
+  {start: 0,    el: 'tx', props: {left: '30px', opacity: 0}},
   {start: 0,    el: 'el', props: {display: 'block'}},
   // Intro
-  {start: 0,    el: 'bg', props: {left: 0, opacity: 1}, duration: 2000},
-  {start: 1000, el: 'tx', props: {left: 0, opacity: 1}, duration: 1000},
+  {start: 0,    el: 'bg', props: {left: '0px', opacity: 1}, duration: 2000},
+  {start: 1000, el: 'tx', props: {left: '0px', opacity: 1}, duration: 1000},
 ];
 $('#slide1').animatetimeline(elements, timeline, function () {
   // all done
