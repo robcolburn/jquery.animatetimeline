@@ -110,6 +110,23 @@
   };
 
   /**
+   * A simpler static version $.fn.animate w/ Transitions & Transforms support
+   * 
+   * @param {object<css property: css value>} props
+   *   CSS properties to apply.
+   * @param {integer} duration
+   *   Milliseconds of duration of animation.
+   * @param {string} easing (optional)
+   *   Easing function to use. Default: 'easeOutQuad'.
+   * @return this
+   */
+  $.fn.animatetimeline_animate = function (props, duration, easing) {
+    return this.each(function () {
+      animate(this, props, duration, easing);
+    });
+  };
+
+  /**
    * Apply CSS transition property(ies) to an element.
    *
    * @param {object|string} props
@@ -118,18 +135,14 @@
    * @param {[string, string]} duration_easing
    *   Unused if props is an object
    *   If null/undefined, unsets the transition
-   *   Number of milliseconds transtion should last.
+   *   Number of milliseconds transition should last.
    *   Key to easing function in css_easing, defaults to ease-in-out.
-   * @return {object}
-   *   Kay/value map of current transitions.
+   * @return this
    */
   $.fn.animatetimeline_transition = function (props, duration, easing) {
-    if (this.length > 1) {
-      return this.each(function () {
-        transtion(this, props, duration, easing);
-      });
-    }
-    return transtion(this, props, duration, easing);
+    return this.each(function () {
+      transition(this, props, duration, easing);
+    });
   };
 
   // Export Classes globally for possible extension.
@@ -173,19 +186,19 @@
     this.frames = {};
     this.duration = 0;
     this.timeout = null;
-    var $el;
+    var $element;
     for (var i = 0, l = timeline.length; i < l; i++) {
       // Do not waste time on invalids, jQuery pattern avoids throwing errors.
       if (!elements[timeline[i].el]) {
         continue;
       }
       // Support jQuery objects, jQuery elements keys, selector elements keys.
-      $el = timeline[i].el.jquery ? timeline[i].el :
+      $element = timeline[i].el.jquery ? timeline[i].el :
         elements[timeline[i].el].jquery ? elements[timeline[i].el] :
         $(elements[timeline[i].el]);
-      this.push(new AnimationStep($el, timeline[i]));
+      this.push(new AnimationStep($element.get(0), timeline[i]));
     }
-    this.timeout = setTimeout(callback, this.getDuration());
+    this.timeout = setTimeout(callback, this.getDuration() + 45);
     this.play();
   }
   /**
@@ -315,7 +328,7 @@
   /**
    * Represents a single animation step.
    * @constructor
-   * @param {jQuery} $el
+   * @param {DOMElement} element
    *   The element to be animated.
    * @param {object} step
    *   How to animate the element.
@@ -324,21 +337,21 @@
    *   {integer} duration (optional) milliseconds of duration of animation.
    *   {string} easing (optional) easing function to use.
    */
-  function AnimationStep ($el, step) {
-    this.$el = $el;
+  function AnimationStep (element, step) {
+    this.element = element;
     this.start = step.start;
     this.duration = step.duration;
     this.props = step.props;
     this.easing = step.easing;
-    if (!this.$el.length) {
+    if (!this.element) {
       throw new Error('Invalid Step');
     }
   }
   AnimationStep.prototype.run = function () {
-    animate(this.$el, this.props, this.duration, this.easing);
+    animate(this.element, this.props, this.duration, this.easing);
   };
   AnimationStep.prototype.stop = function () {
-    stopAnimate(this.$el, this.props);
+    stopAnimate(this.element, this.props);
   };
 
   // Vender prefix constants
@@ -348,8 +361,8 @@
 
   /**
    * A simpler static version $.fn.animate w/ Transitions & Transforms support
-   * 
-   * @param {jQuery} $el
+   *
+   * @param {DOMElement} element
    *   Element to be animated
    * @param {object<css property: css value>} props
    *   CSS properties to apply.
@@ -358,23 +371,25 @@
    * @param {string} easing (optional)
    *   Easing function to use. Default: 'easeOutQuad'.
    */
-  function animate ($el, props, duration, easing) {
+  function animate (element, props, duration, easing) {
     if (JS_TRANSITION) {
       if (JS_TRANSFORM) {
         props = mapTransformProps(props);
       }
-      transition($el.get(0), keys(props), duration, easing);
-      $el.css(props);
+      transition(element, keys(props), duration, easing);
+      for (var prop in props) {
+        element.style[prop] = props[prop];
+      }
     } else {
       if (duration) {
-        $el.animate(props, {duration: duration, easing: easing || 'easeOutQuad', queue: 'animatetimeline'});
+        $(element).animate(props, {duration: duration, easing: easing || 'easeOutQuad', queue: 'animatetimeline'});
       } else {
-        $el.css(props);
+        $(element).css(props);
       }
     }
     if (props.display === 'block') {
       // Force reflow.
-      $.noop($el.offset().left);
+      $.noop($(element).offset().left);
     }
   }
 
@@ -396,14 +411,14 @@
    * Apply CSS transition property(ies) to an element.
    *
    * @param {DOMElement} element
-   *   Raw DOM ELement to apply transtion to.
+   *   Raw DOM ELement to apply transition to.
    * @param {object|string} props
    *   Key/value of CSS properties to duration and easing properties.
    *   Or, CSS property to transition.
    * @param {[string, string]} duration_easing
    *   Unused if props is an object
    *   If null/undefined, unsets the transition
-   *   Number of milliseconds transtion should last.
+   *   Number of milliseconds transition should last.
    *   Key to easing function in css_easing, defaults to ease-in-out.
    * @return {object}
    *   Kay/value map of current transitions.
@@ -411,7 +426,7 @@
   function transition (element, props, duration, easing) {
     var transitions = $.data(element, 'transitions.animatetimeline') || {};
     if (arguments.length === 2 && typeof props === 'string') {
-      return transtion[prop];
+      return transition[prop];
     } else if (!props) {
       transitions = {};
     } else {
@@ -491,9 +506,9 @@
    *   Prefixed propery for CSS
    */
   function cssProp (jsProp) {
-    return jsProp && jsProp.replace(/([A-Z])/g, function(str,m1){
+    return jsProp && '-' + jsProp.replace(/([A-Z])/g, function(str,m1){
       return '-' + m1.toLowerCase();
-    }).replace(/^ms-/,'-ms-');
+    });
   }
 
   /**
@@ -524,7 +539,7 @@
   function values (obj) {
     var arr = [];
     for (var key in obj) {
-      if (obj[key] !== undefined) {
+      if (obj[key]) {
         arr.push(obj[key]);
       }
     }
