@@ -153,6 +153,7 @@
   AnimationTimeline.animate = animate;
   AnimationTimeline.stopAnimate = stopAnimate;
   AnimationTimeline.transition = transition;
+  AnimationTimeline.prefixed = prefixed;
   // Export Constants for lookups
   AnimationTimeline.CSS_EASING = CSS_EASING;
   AnimationTimeline.BUFFER = 60;
@@ -213,7 +214,6 @@
    * Start the timeline animation.
    */
   AnimationTimeline.prototype.play = function () {
-    var timeouts = [];
     for (var startTime in this.frames) {
       this.frames[startTime].play();
     }

@@ -3,16 +3,31 @@
   "version": "1.0.0",
   "description": "Provides the ability to animate a declaritive animation timeline.",
   "author": "Rob Colburn <rob@robcolburn.com>",
+  "main": "jquery.animatetimeline.js",
+  "scripts": {
+    "test": "gulp test"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/robcolburn/jquery.animatetimeline.git"
   },
+  "keywords": [
+    "jquery-plugin",
+    "ecosystem:jquery",
+    "animation",
+    "animate",
+    "timeline"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/robcolburn/jquery.animatetimeline/issues"
+  },
+  "homepage": "https://github.com/robcolburn/jquery.animatetimeline",
   "devDependencies": {
     "chai": "^1.9.1",
+    "gulp": "^3.8.11",
+    "gulp-mocha-phantomjs": "^0.6.1",
     "jquery": "^2.1.1",
-    "mocha": "^1.18.2"
-  },
-  "engines": {
-    "node": ">=0.8.0"
+    "mocha": "^2.2.3"
   }
 }

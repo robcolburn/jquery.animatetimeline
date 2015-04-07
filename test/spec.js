@@ -1,5 +1,7 @@
 /*jshint expr:true*/
 $(function($){
+var transform = $.animatetimeline.prefixed('transform');
+var transition = $.animatetimeline.prefixed('transition');
 describe("jquery.animatetimeline", function(){
   chai.should();
   beforeEach(function () {
@@ -9,7 +11,7 @@ describe("jquery.animatetimeline", function(){
     $('#temp').remove();
   });
 
-  it('Animates a simple slide with text', function (done) {
+  it('Animates a simple slide', function (done) {
     this.timeout(3*1000);
     $('#temp').html(
       '<div id="parent" style="position: absolute;top:0;left:0;width:100%;height:300px">'+
@@ -36,45 +38,50 @@ describe("jquery.animatetimeline", function(){
     ];
     $('#slide').animatetimeline(elements, timeline, function () {
       // all done
-      $('#slide').css('display').should.equal('block');
-      $('#slide .background').css('opacity').should
-        .equal('1');
-      $('#slide .text').css('opacity').should
-        .equal('1');
-      if (Modernizr.csstransitions && Modernizr.csstransforms3d) {
-        $('#slide .background').css('transition').should
-          .contain('opacity').contain('transform')
-          .match(/2s|2000ms/);
-        $('#slide .text').css('transition').should
-          .contain('opacity').contain('transform')
-          .match(/1s|1000ms/);
+      $('#slide').css('display')
+        .should.equal('block');
+      $('#slide .background').attr('style')
+        .should.contain('opacity: 1');
+      $('#slide .text').attr('style')
+        .should.contain('opacity: 1');
+
+      if (transition && transform) {
+        $('#slide .background').attr('style')
+          .should.match(/transition[^;]+opacity/)
+          .and.match(/transition[^;]+(2s|2000ms)/);
+        $('#slide .text').attr('style')
+          .should.match(/transition[^;]+opacity/)
+          .and.match(/transition[^;]+(1s|1000ms)/);
         // Sometimes we get fancy matrix conversion
         if ($('#slide .background').css('transform').match(/matrix/)) {
-          $('#slide .background').css('transform').should
-            .contain('matrix').contain('500');
-          $('#slide .text').css('transform').should
-            .contain('matrix').contain('5500');
+          $('#slide .background').css('transform')
+            .should.contain('matrix')
+            .and.contain('500');
+          $('#slide .text').css('transform')
+            .should.contain('matrix')
+            .and.contain('5500');
         } else {
-          $('#slide .background').css('transform').should
-            .contain('translate').contain('500px');
-          $('#slide .text').css('transform').should
-            .contain('translate').contain('5500px');
+          $('#slide .background').css('transform')
+            .should.contain('translate')
+            .and.contain('500px');
+          $('#slide .text').css('transform')
+            .should.contain('translate')
+            .and.contain('5500px');
         }
-      } else if (Modernizr.csstransitions) {
-        $('#slide .text').css('transition').should
-          .contain('opacity').contain('left')
-          .match(/1s|1000ms/);
-        $('#slide .text').css('left').should
-          .equal('5500px');
+      } else if (transition) {
+        $('#slide .text').attr('style')
+          .should.match(/transition[^;]+opacity/)
+          .and.match(/transition[^;]+(1s|1000ms)/)
+          .and.contain('left: 5500px');
       } else {
-        $('#slide .text').css('left').should
-          .equal('5500px');
+        $('#slide .text').attr('style')
+          .should.contain('left: 5500px');
       }
       done();
     });
   });
 
-  it('Animates a simple slide with text', function (done) {
+  it('Animates a slide with text', function (done) {
     this.timeout(3*1000);
     $('#temp').html(
       '<div id="parent" style="position: absolute;top:0;left:0;width:100%;height:300px">'+
@@ -116,15 +123,22 @@ describe("jquery.animatetimeline", function(){
       {start: 2060, el: 'oldBack', props: {zIndex: 5, display: 'none'}}
     ];
     var animTimeline = $.animatetimeline(elements, timeline, function () {
-     $('#slide1 .background').css('display').should.equal('none');
-     $('#slide1 .background').css('opacity').should.equal('0');
-     $('#slide1 .text').css('display').should.equal('none');
-     $('#slide1 .text').css('opacity').should.equal('0');
-     $('#slide2 .background').css('display').should.equal('block');
-     $('#slide2 .background').css('opacity').should.equal('1');
-     $('#slide2 .text').css('display').should.equal('block');
-     $('#slide2 .text').css('opacity').should.equal('1');
-     done();
+      $('#slide1 .background').attr('style')
+        .should.contain('display: none')
+        .and.contain('opacity: 0');
+      $('#slide1 .background').attr('style')
+        .should.contain('display: none')
+        .and.contain('opacity: 0');
+      $('#slide1 .text').attr('style')
+        .should.contain('display: none')
+        .and.contain('opacity: 0');
+      $('#slide2 .background').attr('style')
+        .should.contain('display: block')
+        .and.contain('opacity: 1');
+      $('#slide2 .text').attr('style')
+        .should.contain('display: block')
+        .and.contain('opacity: 1');
+      done();
     });
     animTimeline.getDuration().should.equal(2060);
   });
