@@ -5,7 +5,7 @@
   "author": "Rob Colburn <rob@robcolburn.com>",
   "main": "jquery.animatetimeline.js",
   "scripts": {
-    "test": "gulp test"
+    "test": "mocha-phantomjs ./test/runner.html"
   },
   "repository": {
     "type": "git",
@@ -25,9 +25,9 @@
   "homepage": "https://github.com/robcolburn/jquery.animatetimeline",
   "devDependencies": {
     "chai": "^1.9.1",
-    "gulp": "^3.8.11",
-    "gulp-mocha-phantomjs": "^0.6.1",
     "jquery": "^2.1.1",
-    "mocha": "^2.2.3"
+    "mocha": "^2.2.3",
+    "mocha-phantomjs": "^3.5.3",
+    "phantomjs": "^1.9.17"
   }
 }
